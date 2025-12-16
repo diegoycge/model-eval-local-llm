@@ -17,11 +17,14 @@ There are also a series of accompanying blog posts which go into more depth abou
 
 * We used [ellmer](https://ellmer.tidyverse.org/) to create connections to the various models and [vitals](https://vitals.tidyverse.org/) to evaluate model performance on R code generation tasks.
 * We tested each model on a shared benchmark: the `are` dataset ("**A**n **R** **E**val"). `are` contains a collection of difficult R coding problems and a column, `target`, with information about the target solution.  
-* Using vitals, we had each model solve each problem in `are`. Then, we scored their solutions using a scoring model (Claude 3.7 Sonnet). Each solution received either an Incorrect, Partially Correct, or Correct score. 
+* Using vitals, we had each model solve each problem in `are`. Then, we scored their solutions using a scoring model (Claude 3.7 Sonnet). Each solution received either an Incorrect, Partially Correct, or Correct score.
 
 ## Running Evaluations
 
-To run the evaluations yourself (or experiment with different models), run or edit the scripts `eval/01_eval.R` and `eval/02_eval.R`. Note that you will need API keys for all model providers. See the ellmer [documentation on authentication](https://ellmer.tidyverse.org/#authentication) for more details. 
+To run the evaluations yourself (or experiment with different models):
+
+1. If adding a new model: edit [`data/models.yaml`](https://github.com/skaltman/model-eval/blob/main/data/models.yaml) with the specification for the model you want to run. 
+2. Run [`eval/run_eval.R`](https://github.com/skaltman/model-eval/blob/main/eval/run_eval.R). This will run the evaluation for all models listed in `data/models.yaml`. Note that you will need API keys for all model providers. See the ellmer [documentation on authentication](https://ellmer.tidyverse.org/#authentication) for more details.
 
 ### Python/Pandas Evaluations
 
