@@ -20,7 +20,7 @@ LOG_DIR <- here::here("logs")
 
 # Restrict the run to specific model_ids from data/models.yaml. Set to NULL to
 # evaluate all unevaluated models in the YAML.
-ONLY_RUN_MODEL_IDS <- c("gemma_4_26b_a4b_lmstudio")
+ONLY_RUN_MODEL_IDS <- c("gemma_4_26b_a4b_lmstudio", "qwen35_9b_opus_distilled_v2_lmstudio")
 
 # Set up logging
 vitals::vitals_log_dir_set(LOG_DIR)

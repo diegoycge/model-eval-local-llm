@@ -17,7 +17,7 @@ SCORER_CC_WORKERS <- 1L  # bump to 4 for ~4x throughput on the 264 grading calls
 
 # Solver concurrency. LM Studio serves one request at a time, so >1 just
 # queues client-side and risks request timeouts. Bump for cloud-API models.
-SOLVER_MAX_ACTIVE <- 1L
+SOLVER_MAX_ACTIVE <- 2L
 
 #' Create the ARE evaluation task
 #'
