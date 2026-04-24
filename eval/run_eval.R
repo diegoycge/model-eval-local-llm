@@ -16,7 +16,11 @@ source(here::here("R/eval_functions.R"))
 YAML_PATH <- here::here("data/models.yaml")
 RESULTS_DIR <- here::here("results_rds")
 LOG_DIR <- here::here("logs")
-SCORER_MODEL <- "claude-3-7-sonnet-latest"
+# Scorer is configured in R/task_definition.R (uses local `claude -p` CLI).
+
+# Restrict the run to specific model_ids from data/models.yaml. Set to NULL to
+# evaluate all unevaluated models in the YAML.
+ONLY_RUN_MODEL_IDS <- c("qwen35_27b_opus_distilled_lmstudio")
 
 # Set up logging
 vitals::vitals_log_dir_set(LOG_DIR)
@@ -31,11 +35,24 @@ model_configs <- parse_model_configs(YAML_PATH)
 # Find unevaluated models
 unevaluated <- find_unevaluated_models(model_configs, RESULTS_DIR)
 
+# Filter to the allow-list, if set
+if (!is.null(ONLY_RUN_MODEL_IDS)) {
+  unknown <- setdiff(ONLY_RUN_MODEL_IDS, names(model_configs))
+  if (length(unknown) > 0) {
+    stop(glue(
+      "ONLY_RUN_MODEL_IDS contains model_id(s) not in YAML: {paste(unknown, collapse=', ')}"
+    ))
+  }
+  unevaluated <- intersect(unevaluated, ONLY_RUN_MODEL_IDS)
+}
+
 # Run evaluations if needed
 if (length(unevaluated) > 0) {
   message(glue("Running {length(unevaluated)} unevaluated model(s)..."))
 
-  scorer_chat <- chat_anthropic(model = SCORER_MODEL)
+  # scorer_chat is passed through but unused — create_are_task() ignores it
+  # and uses the local claude CLI instead. See R/claude_code_scorer.R.
+  scorer_chat <- NULL
 
   eval_results <- run_all_evals(
     model_configs = model_configs,

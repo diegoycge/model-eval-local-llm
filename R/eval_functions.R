@@ -88,7 +88,7 @@ build_chat_args <- function(config) {
     args$base_url <- config$base_url
   }
 
-  # Add custom API key if specified
+  # Add custom API key if specified (ellmer >=0.4.0 prefers `credentials`)
   if (!is.null(config$api_key_env)) {
     api_key <- Sys.getenv(config$api_key_env)
     if (api_key == "") {
@@ -96,7 +96,7 @@ build_chat_args <- function(config) {
         "Environment variable '{config$api_key_env}' not set for model '{config$name}'"
       ))
     }
-    args$api_key <- api_key
+    args$credentials <- function() api_key
   }
 
   # Add api_args if specified in YAML
