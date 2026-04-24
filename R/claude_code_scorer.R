@@ -10,6 +10,13 @@
 library(glue)
 library(purrr)
 
+# `%||%` is a base operator only since R 4.4.0. Define a fallback shim so the
+# retry warning path doesn't crash on older R installs (where it would crash
+# precisely on the rate-limit code path this file is built to harden).
+if (getRversion() < "4.4.0") {
+  `%||%` <- function(a, b) if (is.null(a)) b else a
+}
+
 # Reproduces vitals::qa_default_template (R/scorer-model.R)
 claude_code_qa_template <- function() {
   "You are assessing a submitted answer on a given task based on a criterion.
@@ -54,6 +61,10 @@ claude_code_qa_instructions <- function(partial_credit = FALSE) {
 is_retryable_failure <- function(out_text) {
   if (length(out_text) == 0 || all(is.na(out_text))) return(FALSE)
   txt <- paste(out_text, collapse = " ")
+  # Patterns are deliberately narrow: only well-known transient signals.
+  # Avoid the bare phrase "try again" — Anthropic also uses it in permanent
+  # failure messages like "prompt too long, try again with shorter input",
+  # which we do NOT want to retry.
   patterns <- c(
     "rate limit", "rate-limit", "rate_limit",
     "too many requests",
@@ -61,12 +72,54 @@ is_retryable_failure <- function(out_text) {
     "overloaded", "overload",
     "service unavailable", "\\b503\\b",
     "temporarily unavailable",
-    "try again",
-    "internal server error", "\\b500\\b"
+    "please try again", "try again later", "try again in",
+    "internal server error", "\\b500\\b",
+    "bad gateway", "\\b502\\b",
+    "gateway timeout", "\\b504\\b",
+    "connection reset", "connection refused"
   )
   any(vapply(patterns, function(p) grepl(p, txt, ignore.case = TRUE),
              logical(1)))
 }
+
+# Inline self-tests for is_retryable_failure(). Run at source-time (cheap,
+# microseconds). Catches regression to the retryable-failure heuristic the
+# moment R/claude_code_scorer.R is sourced — which happens at the start of
+# every eval via R/task_definition.R. A failed assertion here aborts the
+# eval before any wasted work, rather than corrupting grades silently.
+local({
+  retry_yes <- c(
+    "Error: rate limit exceeded, please wait",
+    "HTTP 429 Too Many Requests",
+    "received 529 from upstream: service overloaded",
+    "503 Service Unavailable",
+    "500 Internal Server Error",
+    "Bad gateway (502)",
+    "Gateway timeout 504",
+    "please try again in 30 seconds",
+    "API temporarily unavailable",
+    "connection reset by peer",
+    "RATE_LIMIT exceeded"
+  )
+  retry_no <- c(
+    "",
+    NA_character_,
+    "Authentication failed: invalid API key",
+    "Model claude-opus-4-7 not found",
+    "Invalid request: prompt too long, try again with shorter input",
+    "GRADE: C\nThe answer is correct.",
+    "Permission denied"
+  )
+  stopifnot(
+    "is_retryable_failure() should retry on known transients" =
+      all(vapply(retry_yes, is_retryable_failure, logical(1))),
+    "is_retryable_failure() should NOT retry on permanent failures" =
+      !any(vapply(retry_no, is_retryable_failure, logical(1))),
+    "is_retryable_failure() handles empty/NA input" =
+      identical(is_retryable_failure(character(0)), FALSE) &&
+      identical(is_retryable_failure(NA_character_), FALSE)
+  )
+})
 
 #' Invoke the local `claude` CLI in non-interactive mode and return its text.
 #'
