@@ -209,3 +209,13 @@ models:
     base_url: http://localhost:1234/v1
     api_key_env: LM_STUDIO_API_KEY
 
+  - name: Gemma 4 26B-A4B (LM Studio)
+    model_id: gemma_4_26b_a4b_lmstudio
+    provider: LM Studio
+    release_date: 2026-04-23
+    input_price: 0
+    output_price: 0
+    api_model_id: openai/google/gemma-4-26b-a4b
+    base_url: http://localhost:1234/v1
+    api_key_env: LM_STUDIO_API_KEY
+
