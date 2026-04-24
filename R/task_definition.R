@@ -17,9 +17,12 @@ SCORER_CC_MODEL <- "claude-opus-4-7"
 SCORER_CC_WORKERS <- 2L  # bump to 4 for ~2x further throughput; retry logic
                           # in claude_code_scorer.R handles the resulting 429s.
 
-# Solver concurrency. LM Studio serves one request at a time, so >1 just
-# queues client-side and risks request timeouts. Bump for cloud-API models.
-SOLVER_MAX_ACTIVE <- 2L
+# Solver concurrency. For partially-offloaded large models (e.g. 35B MoE on
+# a 16GB card), >1 pressures the LM Studio KV cache enough to trigger
+# eviction of in-flight generations — Qwen3.6-35B at max_active=2 lost
+# 60/264 requests this way. Keep at 1 for partial-offload runs; bump for
+# fully-offloaded small models (Nemotron) or cloud-API models.
+SOLVER_MAX_ACTIVE <- 1L
 
 #' Create the ARE evaluation task
 #'

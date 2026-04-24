@@ -20,7 +20,8 @@
       "Bash(where gh.exe)",
       "Bash(scoop list *)",
       "Bash(winget list *)",
-      "Bash(\"/c/Program Files/R/R-4.5.3/bin/Rscript.exe\" check_progressr.R)"
+      "Bash(\"/c/Program Files/R/R-4.5.3/bin/Rscript.exe\" check_progressr.R)",
+      "Bash('/c/Program Files/R/R-4.5.3/bin/Rscript.exe' -e 'source\\(\"R/eval_functions.R\"\\); configs <- parse_model_configs\\(\"data/models.yaml\"\\); cat\\(\"models in YAML:\", length\\(configs\\), \"\\\\n\"\\); cat\\(\"qwen36 api_args:\\\\n\"\\); print\\(configs[[\"qwen36_35b_a3b_lmstudio\"]]$api_args\\)')"
     ]
   }
 }

@@ -23,7 +23,8 @@ LOG_DIR <- here::here("logs")
 ONLY_RUN_MODEL_IDS <- c(
   "gemma_4_26b_a4b_lmstudio",
   "qwen35_9b_opus_distilled_v2_lmstudio",
-  "nemotron_3_nano_4b_lmstudio"
+  "nemotron_3_nano_4b_lmstudio",
+  "qwen36_35b_a3b_lmstudio"
 )
 
 # Set up logging

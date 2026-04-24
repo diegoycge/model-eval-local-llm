@@ -1,4 +1,56 @@
 models:
+  - name: Qwen 3.6 35B A3B (LM Studio)
+    model_id: qwen36_35b_a3b_lmstudio
+    provider: LM Studio
+    release_date: 2026-04-24
+    input_price: 0
+    output_price: 0
+    api_model_id: openai/qwen/qwen3.6-35b-a3b
+    base_url: http://localhost:1234/v1
+    api_key_env: LM_STUDIO_API_KEY
+    parameters_b: 35
+    active_parameters_b: 3
+    machine: "Alienware (Windows 11, i9-14900F, RTX 4080 16GB)"
+    api_args:
+      temperature: 0.1
+      top_p: 0.95
+      top_k: 20
+      max_tokens: 8192
+    runtime_config:
+      file: Qwen3.6-35B-A3B-Q4_K_M.gguf
+      format: GGUF
+      quantization: Q4_K_M
+      arch: qwen35moe
+      size_gb: 22.07
+      context_length: 8192
+      gpu_offload_layers: 32
+      cpu_thread_pool_size: 12
+      evaluation_batch_size: 512
+      max_concurrent_predictions: 1
+      flash_attention: true
+      unified_kv_cache: true
+      k_cache_quantization: Q8_0
+      v_cache_quantization: Q8_0
+      offload_kv_cache_to_gpu: true
+      keep_model_in_memory: true
+      try_mmap: true
+      seed: random
+      number_of_experts: 8
+      rope_frequency_base: auto
+      rope_frequency_scale: auto
+      temperature: 0.1
+      top_p: 0.95
+      top_k: 20
+      repeat_penalty: null
+      min_p: null
+      max_tokens: null
+      context_overflow: truncate_middle
+      enable_thinking: true
+      preserve_thinking: false
+      system_prompt: ""
+      structured_output: false
+      speculative_decoding: false
+
   - name: Qwen3.5-9B v2 (LM Studio, MacBook M3 Pro, T=0.1)
     model_id: qwen35_9b_opus_distilled_v2_lmstudio_macbook
     provider: LM Studio
