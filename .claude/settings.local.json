@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git show *)",
+      "Read(//tmp/**)",
+      "Bash(\"/c/Program Files/R/R-4.5.3/bin/Rscript.exe\" D:/local-llm-r-eval/model-eval-local-llm/merge_combined.R)",
+      "Bash(mkdir -p /d/tmp)",
+      "Bash(cp /tmp/ours.rds /d/tmp/ours.rds)",
+      "Bash(cp /tmp/theirs.rds /d/tmp/theirs.rds)",
+      "Read(//d/tmp/**)",
+      "Bash(\"/c/Program Files/R/R-4.5.3/bin/Rscript.exe\" rebuild_combined.R)",
+      "Bash('/c/Program Files/R/R-4.5.3/bin/Rscript.exe' -e ' *)",
+      "Bash(\"/c/Program Files/R/R-4.5.3/bin/Rscript.exe\" -e 'cat\\(if\\(requireNamespace\\(\"jsonlite\", quietly=TRUE\\)\\) \"jsonlite OK\\\\n\" else \"jsonlite MISSING\\\\n\"\\)')"
+    ]
+  }
+}

@@ -43,7 +43,8 @@ parse_model_configs <- function(yaml_path) {
         thinking = model$thinking %||% FALSE,
         thinking_budget = model$thinking_budget %||% 2000,
         base_url = model$base_url %||% NULL,
-        api_key_env = model$api_key_env %||% NULL
+        api_key_env = model$api_key_env %||% NULL,
+        api_args = model$api_args %||% NULL
       )
 
       config

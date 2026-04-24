@@ -24,7 +24,11 @@ load_model_info <- function(yaml_path = "data/models.yaml") {
         release_date = model$release_date,
         Input = model$input_price,
         Output = model$output_price,
-        api_model_id = model$api_model_id %||% NA_character_
+        api_model_id = model$api_model_id %||% NA_character_,
+        parameters_b = model$parameters_b %||% NA_real_,
+        active_parameters_b = model$active_parameters_b %||% NA_real_,
+        machine = model$machine %||% NA_character_,
+        runtime_config = list(model$runtime_config %||% list())
       )
     })
 }

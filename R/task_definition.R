@@ -4,6 +4,7 @@
 
 library(ellmer)
 library(vitals)
+library(jsonlite)
 
 source(here::here("R/claude_code_scorer.R"))
 
@@ -59,11 +60,27 @@ model_eval <- function(
   ...
 ) {
   model_path <- fs::path(results_dir, filename, ext = "rds")
+  sidecar_path <- fs::path(results_dir, filename, ext = "json")
 
   if (!overwrite & fs::file_exists(model_path)) {
     message(glue::glue("Skipping {model}: file already exists at {model_path}"))
     return(invisible(NULL))
   }
+
+  chat_args <- list(...)
+
+  # Snapshot LM Studio loader state BEFORE running. Skip for non-local URLs.
+  lm_state <- NULL
+  if (!is.null(chat_args$base_url) &&
+      grepl("localhost|127\\.0\\.0\\.1", chat_args$base_url)) {
+    state_url <- paste0(sub("/v1/?$", "", chat_args$base_url), "/api/v0/models")
+    lm_state <- tryCatch(
+      jsonlite::fromJSON(state_url, simplifyVector = FALSE),
+      error = function(e) list(error = conditionMessage(e))
+    )
+  }
+
+  run_started <- Sys.time()
 
   chat <- chat(name = model, ...)
 
@@ -74,5 +91,40 @@ model_eval <- function(
     on_error = "continue"
   )
 
+  run_completed <- Sys.time()
+
   readr::write_rds(are_task, file = model_path)
+
+  # Strip any function-typed entries (e.g. credentials) before serializing.
+  chat_args_safe <- chat_args[!vapply(chat_args, is.function, logical(1))]
+
+  sidecar <- list(
+    model_id = filename,
+    api_model_id = model,
+    base_url = chat_args_safe$base_url,
+    api_args_sent = chat_args_safe$api_args,
+    run_started = format(run_started, "%Y-%m-%dT%H:%M:%S%z"),
+    run_completed = format(run_completed, "%Y-%m-%dT%H:%M:%S%z"),
+    run_duration_seconds = as.numeric(
+      difftime(run_completed, run_started, units = "secs")
+    ),
+    epochs = 3L,
+    solver_max_active = SOLVER_MAX_ACTIVE,
+    scorer_model = SCORER_CC_MODEL,
+    scorer_workers = SCORER_CC_WORKERS,
+    lm_studio_state = lm_state,
+    sessionInfo = paste(
+      utils::capture.output(utils::sessionInfo()),
+      collapse = "\n"
+    )
+  )
+
+  jsonlite::write_json(
+    sidecar,
+    sidecar_path,
+    auto_unbox = TRUE,
+    pretty = TRUE,
+    null = "null"
+  )
+  message(glue::glue("Wrote sidecar metadata: {sidecar_path}"))
 }

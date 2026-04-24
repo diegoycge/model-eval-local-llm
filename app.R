@@ -30,12 +30,8 @@ available_models_with_provider <- available_models |>
 
 # Models to select at startup
 default_selected <- c(
-  "opus_4_5",
-  "haiku_4_5_thinking",
-  "sonnet_4_5_thinking",
-  "gemini_3",
-  "gpt_5_1",
-  "gpt_5"
+  "gemma_4_26b_a4b_lmstudio",
+  "qwen35_9b_opus_distilled_v2_lmstudio"
 )
 
 # Build checkbox UI with provider headers
@@ -111,21 +107,41 @@ ui <- page_navbar(
         ),
 
         nav_panel(
-          "Cost vs. Performance",
+          "Parameters vs. Performance",
           card(
-            card_header("Compare accuracy and total cost"),
+            card_header("Compare accuracy and parameter count (local LLMs only)"),
             card_body(
-              plotOutput("cost_plot", height = "600px")
+              radioButtons(
+                "param_axis",
+                label = "X-axis",
+                choices = c(
+                  "Active parameters" = "active",
+                  "Total parameters" = "total"
+                ),
+                selected = "active",
+                inline = TRUE
+              ),
+              plotOutput("parameters_plot", height = "560px")
             )
           )
         ),
 
         nav_panel(
-          "Pricing Details",
+          "Model Details",
           card(
             card_body(
               class = "p-0",
               gt_output("pricing_table")
+            )
+          )
+        ),
+
+        nav_panel(
+          "Configuration",
+          card(
+            card_body(
+              class = "p-0",
+              gt_output("settings_table")
             )
           )
         )
@@ -218,11 +234,14 @@ server <- function(input, output, session) {
     plot_performance(filtered_eval())
   })
 
-  # Cost vs Performance scatter plot
-  output$cost_plot <- renderPlot({
+  # Parameters vs Performance scatter plot (local LLMs only)
+  output$parameters_plot <- renderPlot({
     req(nrow(eval_summary()) > 0)
 
-    plot_cost_vs_performance(eval_summary())
+    plot_parameters_vs_performance(
+      eval_summary(),
+      x_axis = input$param_axis %||% "active"
+    )
   })
 
   # Pricing table
@@ -230,6 +249,13 @@ server <- function(input, output, session) {
     req(nrow(eval_summary()) > 0)
 
     create_pricing_table(eval_summary(), model_info)
+  })
+
+  # Configuration / runtime_config table
+  output$settings_table <- render_gt({
+    req(length(selected_models()) > 0)
+
+    create_settings_table(model_info, selected_models())
   })
 }
 
