@@ -99,3 +99,52 @@ models:
       system_prompt: ""
       structured_output: false
       speculative_decoding: false
+
+  - name: Nemotron 3 Nano 4B (LM Studio)
+    model_id: nemotron_3_nano_4b_lmstudio
+    provider: LM Studio
+    release_date: 2026-04-24
+    input_price: 0
+    output_price: 0
+    api_model_id: openai/nvidia/nemotron-3-nano-4b
+    base_url: http://localhost:1234/v1
+    api_key_env: LM_STUDIO_API_KEY
+    parameters_b: 4
+    active_parameters_b: 4
+    machine: "Alienware (Windows 11, i9-14900F, RTX 4080 16GB)"
+    api_args:
+      temperature: 0.6
+      top_p: 0.95
+      top_k: 20
+      repeat_penalty: 1.1
+      max_tokens: 8192
+    runtime_config:
+      file: NVIDIA-Nemotron-3-Nano-4B-Q4_K_M.gguf
+      format: GGUF
+      quantization: Q4_K_M
+      arch: nemotron_h
+      size_gb: 2.84
+      context_length: 32768
+      gpu_offload_layers: 42
+      cpu_thread_pool_size: 12
+      evaluation_batch_size: 512
+      max_concurrent_predictions: 4
+      flash_attention: true
+      unified_kv_cache: true
+      k_cache_quantization: f16
+      v_cache_quantization: f16
+      offload_kv_cache_to_gpu: true
+      keep_model_in_memory: true
+      try_mmap: true
+      seed: random
+      rope_frequency_base: auto
+      rope_frequency_scale: auto
+      temperature: 0.6
+      top_p: 0.95
+      top_k: 20
+      repeat_penalty: 1.1
+      max_tokens: null
+      context_overflow: truncate_middle
+      system_prompt: ""
+      structured_output: false
+      speculative_decoding: false

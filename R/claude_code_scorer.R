@@ -45,16 +45,54 @@ claude_code_qa_instructions <- function(partial_credit = FALSE) {
   )
 }
 
+#' Heuristic: does the captured output look like a transient/retryable error?
+#'
+#' Returns TRUE for rate-limit (429), service-overloaded (529), and common
+#' transient network/server messages. We don't have structured error codes
+#' from `claude -p`, just text mixed from stdout/stderr — so this is a
+#' string match against known phrases.
+is_retryable_failure <- function(out_text) {
+  if (length(out_text) == 0 || all(is.na(out_text))) return(FALSE)
+  txt <- paste(out_text, collapse = " ")
+  patterns <- c(
+    "rate limit", "rate-limit", "rate_limit",
+    "too many requests",
+    "\\b429\\b", "\\b529\\b",
+    "overloaded", "overload",
+    "service unavailable", "\\b503\\b",
+    "temporarily unavailable",
+    "try again",
+    "internal server error", "\\b500\\b"
+  )
+  any(vapply(patterns, function(p) grepl(p, txt, ignore.case = TRUE),
+             logical(1)))
+}
+
 #' Invoke the local `claude` CLI in non-interactive mode and return its text.
 #'
 #' Uses the user's existing Claude Code authentication (keychain/OAuth or
 #' ANTHROPIC_API_KEY). The prompt is piped via stdin to avoid shell-escaping
 #' issues with code samples that contain quotes/newlines.
+#'
+#' Retries on transient failures (rate limits, overloads, 5xx) with
+#' exponential backoff + jitter so concurrent workers don't all retry in
+#' lockstep. Non-retryable failures (e.g. malformed prompt, auth error)
+#' fail fast with a single attempt.
+#'
+#' @param prompt User text to send.
+#' @param model Claude model identifier.
+#' @param system_prompt System prompt prepended to the call.
+#' @param timeout_sec Timeout per attempt (passed to `system2`).
+#' @param max_attempts Total attempts including the first try. Default 4
+#'   (initial + 3 retries → ~2s, 8s, 30s waits).
+#' @return The combined stdout/stderr text on success, or NA_character_ if
+#'   all attempts failed.
 call_claude_code <- function(
   prompt,
   model = "claude-opus-4-7",
   system_prompt = "You are a precise grading assistant. Respond with brief reasoning and the exact requested format. Do not use any tools.",
-  timeout_sec = 180
+  timeout_sec = 180,
+  max_attempts = 4L
 ) {
   args <- c(
     "--print",
@@ -64,31 +102,55 @@ call_claude_code <- function(
     "--no-session-persistence"
   )
 
-  out <- tryCatch(
-    system2(
-      "claude",
-      args = args,
-      input = prompt,
-      stdout = TRUE,
-      stderr = TRUE,
-      timeout = timeout_sec
-    ),
-    error = function(e) {
-      warning(glue::glue("claude -p call failed: {e$message}"))
-      NA_character_
-    }
-  )
+  # Backoff schedule for retries 1..3 (in seconds before the *next* attempt).
+  # Add 0..1s jitter so parallel workers desync.
+  backoff_base <- c(2, 8, 30)
 
-  status <- attr(out, "status")
-  if (!is.null(status) && !identical(status, 0L)) {
-    warning(glue::glue(
-      "claude -p exited with status {status}: {paste(out, collapse=' | ')}"
+  for (attempt in seq_len(max_attempts)) {
+    out <- tryCatch(
+      system2(
+        "claude",
+        args = args,
+        input = prompt,
+        stdout = TRUE,
+        stderr = TRUE,
+        timeout = timeout_sec
+      ),
+      error = function(e) {
+        structure(
+          paste("R-side system2 error:", e$message),
+          status = -1L
+        )
+      }
+    )
+
+    status <- attr(out, "status")
+    failed <- (!is.null(status) && !identical(status, 0L)) ||
+      length(out) == 0 || all(is.na(out))
+
+    if (!failed) {
+      return(paste(out, collapse = "\n"))
+    }
+
+    retryable <- is_retryable_failure(out)
+    last_attempt <- attempt == max_attempts
+
+    if (!retryable || last_attempt) {
+      warning(glue::glue(
+        "claude -p failed (attempt {attempt}/{max_attempts}, status={status %||% 'NA'}, retryable={retryable}): ",
+        "{paste(utils::head(out, 5), collapse=' | ')}"
+      ))
+      return(NA_character_)
+    }
+
+    wait <- backoff_base[min(attempt, length(backoff_base))] + stats::runif(1, 0, 1)
+    message(glue::glue(
+      "claude -p transient failure (attempt {attempt}/{max_attempts}); retrying in {round(wait, 1)}s..."
     ))
-    return(NA_character_)
+    Sys.sleep(wait)
   }
 
-  if (length(out) == 0 || all(is.na(out))) return(NA_character_)
-  paste(out, collapse = "\n")
+  NA_character_
 }
 
 # Reproduces vitals::qa_extract_grade

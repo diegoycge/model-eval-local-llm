@@ -14,7 +14,7 @@ results_dir <- here::here("results_rds")
 # Scoring runs through the local `claude -p` CLI (Claude Opus 4.7) using the
 # user's existing Claude Code session auth. See R/claude_code_scorer.R.
 SCORER_CC_MODEL <- "claude-opus-4-7"
-SCORER_CC_WORKERS <- 1L  # bump to 4 for ~4x throughput on the 264 grading calls
+SCORER_CC_WORKERS <- 2L  # bump to 4 for ~4x throughput on the 264 grading calls
 
 # Solver concurrency. LM Studio serves one request at a time, so >1 just
 # queues client-side and risks request timeouts. Bump for cloud-API models.
