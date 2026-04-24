@@ -11,7 +11,15 @@
       "Bash(\"/c/Program Files/R/R-4.5.3/bin/Rscript.exe\" rebuild_combined.R)",
       "Bash('/c/Program Files/R/R-4.5.3/bin/Rscript.exe' -e ' *)",
       "Bash(\"/c/Program Files/R/R-4.5.3/bin/Rscript.exe\" -e 'cat\\(if\\(requireNamespace\\(\"jsonlite\", quietly=TRUE\\)\\) \"jsonlite OK\\\\n\" else \"jsonlite MISSING\\\\n\"\\)')",
-      "Bash(\"/c/Program Files/R/R-4.5.3/bin/Rscript.exe\" -e 'source\\(\"R/claude_code_scorer.R\"\\); cat\\(\"parse OK\\\\n\"\\); cat\\(\"retryable tests:\\\\n\"\\); print\\(c\\(rate=is_retryable_failure\\(\"Error: rate limit reached, retry after 30s\"\\), code429=is_retryable_failure\\(\"HTTP 429\"\\), overload=is_retryable_failure\\(\"API is overloaded\"\\), auth=is_retryable_failure\\(\"Invalid API key\"\\), notfound=is_retryable_failure\\(\"model not found\"\\), empty=is_retryable_failure\\(character\\(0\\)\\), na=is_retryable_failure\\(NA_character_\\)\\)\\)')"
+      "Bash(\"/c/Program Files/R/R-4.5.3/bin/Rscript.exe\" -e 'source\\(\"R/claude_code_scorer.R\"\\); cat\\(\"parse OK\\\\n\"\\); cat\\(\"retryable tests:\\\\n\"\\); print\\(c\\(rate=is_retryable_failure\\(\"Error: rate limit reached, retry after 30s\"\\), code429=is_retryable_failure\\(\"HTTP 429\"\\), overload=is_retryable_failure\\(\"API is overloaded\"\\), auth=is_retryable_failure\\(\"Invalid API key\"\\), notfound=is_retryable_failure\\(\"model not found\"\\), empty=is_retryable_failure\\(character\\(0\\)\\), na=is_retryable_failure\\(NA_character_\\)\\)\\)')",
+      "Bash(R --version)",
+      "Bash(\"/c/Program Files/R/R-4.5.3/bin/Rscript.exe\" -e 'source\\(\"R/claude_code_scorer.R\"\\); cat\\(\"source OK + self-tests passed\\\\n\"\\); source\\(\"R/task_definition.R\"\\); cat\\(\"task_definition OK\\\\n\"\\)')",
+      "Bash(gh pr create --base main --head scorer-retry-review-fixes --title 'Address code review fixes on scorer retry logic' --body ' *)",
+      "Read(//c/Users/diego/scoop/shims/**)",
+      "Read(//c/Program Files/GitHub CLI/**)",
+      "Bash(where gh.exe)",
+      "Bash(scoop list *)",
+      "Bash(winget list *)"
     ]
   }
 }
