@@ -17,6 +17,14 @@ if (getRversion() < "4.4.0") {
   `%||%` <- function(a, b) if (is.null(a)) b else a
 }
 
+# Default to a text progress bar for the scoring phase if user hasn't picked
+# another handler. Override before sourcing this file with e.g.
+# `progressr::handlers("cli")` for prettier output. Scoring is wrapped in
+# `progressr::with_progress()` below so we don't need `global = TRUE`.
+if (requireNamespace("progressr", quietly = TRUE)) {
+  progressr::handlers("txtprogressbar")
+}
+
 # Reproduces vitals::qa_default_template (R/scorer-model.R)
 claude_code_qa_template <- function() {
   "You are assessing a submitted answer on a given task based on a criterion.
@@ -269,22 +277,37 @@ model_graded_qa_claude_code <- function(
       requireNamespace("furrr", quietly = TRUE) &&
       requireNamespace("future", quietly = TRUE)
 
-    if (use_parallel) {
-      old_plan <- future::plan(future::multisession, workers = workers)
-      on.exit(future::plan(old_plan), add = TRUE)
-      responses <- furrr::future_map_chr(
-        prompts,
-        function(p) call_claude_code(p, model = model),
-        .options = furrr::furrr_options(seed = TRUE)
-      )
+    has_progressr <- requireNamespace("progressr", quietly = TRUE)
+
+    # Worker that updates the progressor (if available) after each call.
+    # Defined inside so it captures the local progressor `p`.
+    score_one <- function(prompt, p = NULL) {
+      out <- call_claude_code(prompt, model = model)
+      if (!is.null(p)) p()
+      out
+    }
+
+    run_scoring <- function() {
+      p <- if (has_progressr) progressr::progressor(steps = length(prompts)) else NULL
+
+      if (use_parallel) {
+        old_plan <- future::plan(future::multisession, workers = workers)
+        on.exit(future::plan(old_plan), add = TRUE)
+        furrr::future_map_chr(
+          prompts,
+          score_one,
+          p = p,
+          .options = furrr::furrr_options(seed = TRUE)
+        )
+      } else {
+        purrr::map_chr(prompts, score_one, p = p)
+      }
+    }
+
+    responses <- if (has_progressr) {
+      progressr::with_progress(run_scoring())
     } else {
-      responses <- purrr::map_chr(
-        seq_along(prompts),
-        function(i) {
-          message(glue::glue("  [{i}/{length(prompts)}] scoring..."))
-          call_claude_code(prompts[[i]], model = model)
-        }
-      )
+      run_scoring()
     }
 
     grades <- purrr::map_chr(responses, extract_grade, pattern = grade_pattern)
